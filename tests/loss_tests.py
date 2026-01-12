@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from losses import MeanSquareError
+from src.losses import MeanSquareError
 
 class MSETests(unittest.TestCase):
     prediction=np.asarray([0.5, 0.3])

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from optimizer import SGD, Optimizer
-from mlp import Layer
+from src.optimizer import SGD
+from src.mlp import Layer
 from utils import Grad
 
 class SGDTests(unittest.TestCase):

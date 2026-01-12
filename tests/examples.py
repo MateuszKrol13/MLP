@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from mlp import Layer
+from src.mlp import Layer
 
 class NetworkExample(unittest.TestCase):
     def setUp(self):

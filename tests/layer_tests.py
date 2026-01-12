@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from mlp import Layer
-from activations import get_activation
+from src.mlp import Layer
+from src.activations import get_activation
 
 class ConstructionTests(unittest.TestCase):
     def setUp(self):
@@ -68,3 +68,16 @@ class PassTests(unittest.TestCase):
                 self.assertTrue(
                     np.array_equal(k, v)
                 )
+
+    def test_preserve_shape(self):
+        weights_random = np.random.randn(32, 172)
+        bias_random = np.random.randn(1, 172)
+
+        l = Layer(activation="linear")._from_ndarray(
+            w_arr=weights_random,
+            b_arr=bias_random
+        )
+        inp = np.random.randn(100, 32)
+        outp = l.forward(inp)
+
+        self.assertEqual(outp.shape, (100, 172))

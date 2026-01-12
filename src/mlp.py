@@ -1,9 +1,6 @@
 import numpy as np
-from typing import Callable
-from numpy import matrix
 
-from activations import *
-from losses import *
+from src.activations import *
 from utils import Grad
 
 class Layer:
@@ -20,6 +17,7 @@ class Layer:
         self.weights = weights
         self.bias = bias
         self.activation = get_activation(activation) if activation is not None else None
+        self.built = False
         self._grad = Grad()
 
     def forward(self, input):
@@ -65,30 +63,35 @@ class MultiLayerPerceptron:
             raise ValueError("Layer list is empty!")
         del self._layers[-1]
 
-    def fit(self, x, y, epochs: int):
+    def fit(self, x, y, epochs: int, batch: int):
 
         print("begin network training!")
         for epoch in range(epochs):
             print(f"Running epoch {epoch} of {epochs}")
-            for i in range(len(x)):
+            for i in range(0, len(x) // batch, 1):
+                # batch
+                inp = x[i*batch:(i+1)*batch]
+
                 # forward
-                inp = x[i]
                 for layer in self._layers:
                     inp = layer.forward(inp)
 
                 # error func
-                err_derr, loss = self._loss.calc_loss(inp, y[i])
+                loss, err_derr = self._loss.calc_loss(y_pred=inp, y_true=y[i*batch:(i+1)*batch])
                 print(f"Loss: {np.sum(loss)}", end="\r")
 
-                # backward
-                layer_err = err_derr
-                for layer in reversed(self._layers):
-                    layer_err = self._optimizer.apply_grad(layer, passdown_err=layer_err)
+                #TODO: Temp workaround for softmax...
+                self._layers[-1]._grad.activation_derivative = err_derr
 
-    def predict(self, x):
+                # backward
+                layer_err = np.ones(10)
+                for layer in reversed(self._layers):
+                    layer_err = self._optimizer.apply_grad(layer, passdown_err=layer_err, batch=batch)
+
+    def predict(self, x, batch=1):
         predictions = []
-        for i in range(len(x)):
-            inp = x[i]
+        for i in range(0, len(x) // batch, 1):
+            inp = x[i*batch:(i+1)*batch]
             for layer in self._layers:
                 inp = layer.forward(inp)
 
