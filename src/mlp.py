@@ -35,7 +35,6 @@ class Layer:
             out_derr=input, # d_out / d_w
             act_derr=act_derr
         )
-
         return output
 
     def _from_ndarray(self, w_arr, b_arr):
@@ -67,26 +66,53 @@ class MultiLayerPerceptron:
 
         print("begin network training!")
         for epoch in range(epochs):
-            print(f"Running epoch {epoch} of {epochs}")
+            losses = []
             for i in range(0, len(x) // batch, 1):
-                # batch
-                inp = x[i*batch:(i+1)*batch]
+                ### DATA ###
+                x_batch, y_batch = x[i*batch:(i+1)*batch], y[i*batch:(i+1)*batch]
 
-                # forward
+                ### FORWARD ###
                 for layer in self._layers:
-                    inp = layer.forward(inp)
+                    x_batch = layer.forward(x_batch)
 
-                # error func
-                loss, err_derr = self._loss.calc_loss(y_pred=inp, y_true=y[i*batch:(i+1)*batch])
-                print(f"Loss: {np.sum(loss)}", end="\r")
+                ### ERROR ###
+                loss, err_derr = self._loss.calc_loss(y_pred=x_batch, y_true=y_batch)
+                losses.append(loss)
+                print(f"Epoch {epoch}, loss: {np.sum(loss)}", end="\r")
 
-                #TODO: Temp workaround for softmax...
-                self._layers[-1]._grad.activation_derivative = err_derr
-
-                # backward
-                layer_err = np.ones(10)
+                ### BACKWARD ###
+                err=err_derr
                 for layer in reversed(self._layers):
-                    layer_err = self._optimizer.apply_grad(layer, passdown_err=layer_err, batch=batch)
+                    err = self._optimizer.apply_grad(layer, passdown_err=err, batch=batch)
+
+            print(f"Epoch {epoch} loss combined: {np.mean(losses)}")
+
+    def save_weights(self):
+        import pickle
+        save_dict = {}
+        for layer in self._layers:
+            layer_save = {
+                "weights": layer.weights,
+                "bias": layer.bias,
+                "activation": layer.activation
+            }
+            save_dict[layer.name] = layer_save
+
+        with open("mlp.pkl", "wb") as f:
+            pickle.dump(save_dict, f)
+
+    def load_weigths(self):
+        import pickle
+        with open("mlp.pkl", "rb") as f:
+            save_dict = pickle.load(f)
+
+        self._layers = []
+        for k, v in save_dict.items():
+            l = Layer(activation=v["activation"])._from_ndarray(
+                w_arr=v["weights"],
+                v_arr=v["bias"]
+            )
+            self._layers.append(l)
 
     def predict(self, x, batch=1):
         predictions = []
@@ -98,53 +124,3 @@ class MultiLayerPerceptron:
             predictions.append(inp)
 
         return predictions
-
-if "__main__" == __name__:
-    # tests
-    w = np.asarray([ [-1, 0, 1, 2]] *3, dtype=np.float32) * 3
-    b = np.asarray([1] * 4, dtype=np.float32)
-    inp = np.asarray([-2, 3, 0], dtype=np.float32)
-    tar = np.asarray([0, 1], dtype=np.float32)
-
-    L = Layer(weights=w, bias=b)
-    o = L.forward(inp)
-
-    L2 = Layer(weights=w, bias=b, activation="relu")
-    L2.forward(inp)
-    print(L2._cache)
-
-    #runs
-    L_one = Layer(
-        weights=np.asarray([[0.3, 0.3, 0.1, 0.2], [0.3, 0.4, 0.3, 0. ], [0.3, 0.7, 0.6, 0.3]], dtype=np.float32),
-        bias=np.asarray([0.9, 0.9, 0.4, 0.5], dtype=np.float32),
-        activation="relu"
-    )
-
-    L_two = Layer(
-        weights=np.asarray([[0.5, 0.7], [0.5, 0.6], [0.8, 0.3], [0.4, 0.7]], dtype=np.float32),
-        bias=np.asarray([0.3, 0.2], dtype=np.float32),
-        activation="relu"
-    )
-
-    L_three = Layer(
-        weights=np.asarray([[0.8, 0.6], [0.5, 0.3]], dtype=np.float32),
-        bias=np.asarray([0.5, 0.4], dtype=np.float32),
-        activation="softmax"
-    )
-
-    #forward
-    inp=np.asarray([[1.0, 0.5, -1.0]])
-    target = np.asarray([1, 0])
-
-    i1 = L_one.forward(inp)
-    i2 = L_two.forward(i1)
-    i3 = L_three.forward(i2)
-
-    #loss
-    mse = (i3 - target) ** 2 / tar.size
-    d_mse = 2 * (i3-target) / tar.size
-
-    #backward
-    b3 = L_three.backwards(d_mse, 0.1)
-    b2 = L_two.backwards(b3,0.1)
-    b1 = L_one.backwards(b2, 0.1)

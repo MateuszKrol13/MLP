@@ -1,4 +1,48 @@
 # Implementing Multi Layer Perceptron with builder pattern
+ An implementation of multi layer perceptron in Python 3.9 with Numpy library as vector library. Solution also allows
+ for mini-batch use, 
+ 
+Description of objects and their jobs:
+* MulitiLayerPerceptron --> implements training and inference loop and defines network structure
+* Layer --> contains weights, stores gradients, implements forward pass
+* Optimizer --> specifies weight updating strategy and handles gradient backward pass
+* Loss --> implements loss function and handles loss / loss & output layer (softmax) derivative
+* Activation (functional) --> handles data activation and activation derivative
+
+```
+├───data/
+│   └───digit-recognizer - kaggle minst dataset
+├───src/
+│   ├───activations.py
+│   ├───losses.py
+│   ├───mlp.py
+│   └───optimizer.py
+├───tests/ - some tests to verify behaviour, not complete coverage
+│   └─── ...
+├───utils/
+│   ├───typing - type annotations
+│   │   └───__init__.py
+│   ├───__init__.py - dataclass for storing gradient
+│   ├───grad.py - dataclass for storing gradient
+│   └───helper.py - helper functions
+├───.gitignore
+├───demo.py - raw-bone demo on which the solution was built
+├───main.py - main program to run
+├───readme.md
+└───requirements.txt
+```
+
+## How to run
+install dependencies (really only numpy)
+```commandline
+pip install -r requirements.txt
+```
+Then modify main.py to your liking (change weight count, add layers etc.)
+
+
+```commandline
+py main.py
+```
 
 ## Assumptions and notation
 * only sequential relations are considered (no skip connections / residuals)
@@ -6,17 +50,14 @@
   * element-wise multiplication a * b
   * matrix multiplication a @ b
 * for simplicity, autograd is not implemented, and the layers provide recipies to optimizer on how to update values
+  * for activations that rely on loss gradient to calculate their derivative, activation derivative is returned as 
+None, then the optimizer passes loss gradient, which is calculated in relation to output layer activation, to lower elements
 
-# Notation explanation
-* I use '*' numpy operator to perform element-wise calculations. It can be used way beyond this usecase, but it comes 
-with some caveats, so to keep things simple * operation means element wise multiplication
-* @ numpy operation is used for matrix multiplication
+## Kaggle submission
+![img.png](kaggle.png)
 
-also small **note**: this example considers input batch as one, and operations may not perform as expected when extended
-to mini-batch solution. At that point it's convenient to switch to einsum operator for matrix operations, but I believe
-it may make things little bit complicated for the first view of the subject.
-
-# Toy Example: Single Training Step
+<!--
+## Toy Example: Single Training Step
 
 To show how does a simplified neural network training looks like, I have prepared a following example, that shows
 single forward pass and backwards pass, with code and explanation. Each network layer consists of an integer number of
@@ -274,3 +315,5 @@ b_3^{\text{new}} =
 \Delta W = \delta \, a^\top
 \]
 - SGD updates weights using **one sample**
+
+-->

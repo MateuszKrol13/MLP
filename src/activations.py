@@ -41,9 +41,8 @@ def softmax(logits):
     """Softmax has an annoying derivative, thats why its often used with specific losses
     because of architectural design to not implement autograd, a workaround to calculate
     derivative must be implemented"""
-    scaled_logits = logits - np.max(logits, axis=0)
-    e_logits = np.exp(scaled_logits)
-    activated = e_logits / np.sum(e_logits.flatten())
+    scaled_logits = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+    scaling_factor = np.sum(scaled_logits, axis=-1, keepdims=True)
+    activated = scaled_logits / scaling_factor
 
     return None, activated
-

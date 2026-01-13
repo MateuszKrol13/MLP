@@ -32,6 +32,6 @@ class CategoricalCrossEntropy(Loss):
     def calc_loss(cls, y_pred, y_true) -> tuple[LossValue, LossDerivative]:
         y_pred = np.clip(y_pred, 1e-12, 1 - 1e-12)
         loss = -np.sum(y_true * np.log(y_pred), axis=1)
-        loss_derivative = y_pred - y_true
+        loss_and_softmax_derivative = y_pred - y_true
 
-        return loss, loss_derivative
+        return loss, loss_and_softmax_derivative
